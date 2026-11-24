@@ -4,9 +4,10 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from database import lifespan
 from routers.predict import router
 
-app = FastAPI(title="Advertisement moderation API")
+app = FastAPI(title="Advertisement moderation API", lifespan=lifespan)
 app.include_router(router)
 logger = logging.getLogger(__name__)
 

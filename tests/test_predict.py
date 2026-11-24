@@ -39,7 +39,9 @@ def test_predict(client, payload, verified, images, expected):
                                   "name", "description", "category", "images_qty"])
 def test_missing_field(client, payload, field):
     del payload[field]
-    assert client.post("/predict", json=payload).status_code == 400
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 400
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", field]]
 
 
 @pytest.mark.parametrize("field,value", [
@@ -52,13 +54,23 @@ def test_missing_field(client, payload, field):
 ])
 def test_invalid_field(client, payload, field, value):
     payload[field] = value
-    assert client.post("/predict", json=payload).status_code == 400
+    response = client.post("/predict", json=payload)
+    assert response.status_code == 400
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", field]]
 
 
 def test_invalid_body(client, payload):
-    assert client.post("/predict").status_code == 400
-    assert client.post("/predict", content="{", headers={"Content-Type": "application/json"}).status_code == 400
-    assert client.post("/predict", json={**payload, "extra": 1}).status_code == 400
+    response = client.post("/predict")
+    assert response.status_code == 400
+    assert [error["loc"] for error in response.json()["detail"]] == [["body"]]
+
+    response = client.post("/predict", content="{", headers={"Content-Type": "application/json"})
+    assert response.status_code == 400
+    assert response.json()["detail"][0]["loc"][0] == "body"
+
+    response = client.post("/predict", json={**payload, "extra": 1})
+    assert response.status_code == 400
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", "extra"]]
 
 
 def test_business_error(client, payload):
